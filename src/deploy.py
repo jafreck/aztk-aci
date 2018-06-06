@@ -27,8 +27,6 @@ def create_container_group_multi(aci_client, resource_group, container_group_nam
     """
     print("Creating container group '{0}'...".format(container_group_name))
 
-    # Configure the containers
-
     # Configure the container group
     ports = [Port(protocol=ContainerGroupNetworkProtocol.tcp, port=8080)]
     group_ip_address = IpAddress(ports, dns_name_label=container_group_name)
