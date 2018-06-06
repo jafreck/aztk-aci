@@ -1,9 +1,11 @@
 
 
-import 
-
-
-ContainerGroup(containers, os_type, location=None, tags=None, image_registry_credentials=None, restart_policy=None, ip_address=None, volumes=None)
+import azure.mgmt.containerinstance
+from azure.mgmt.containerinstance.models import(
+    ContainerGroup,
+    Container,
+    ContainerInstanceManagementClient
+)
 
 
 aci_client = ContainerInstanceManagementClient(credentials, subscription_id, base_url=None)
@@ -56,3 +58,30 @@ def create_container_group(aci_client, resource_group,
     print("Once DNS has propagated, container group '{0}' will be reachable at"
           " http://{1}".format(container_group_name,
                                container_group.ip_address.fqdn))
+
+
+
+def create_container(*args, **kwargs):
+    return Container(name, image, resources, command=None, ports=None, environment_variables=None, volume_mounts=None)
+
+
+def create_master_container(*args, **kwargs):
+    return create_container(name, image, resources, command=None, ports=None, environment_variables=None, volume_mounts=None)
+
+
+def create_worker_container(*args, **kwargs):
+    return create_container(name, image, resources, command=None, ports=None, environment_variables=None, volume_mounts=None)
+
+
+def create_extension_container(*args, **kwargs):
+    return create_container(name, image, resources, command=None, ports=None, environment_variables=None, volume_mounts=None)
+
+
+def create_spark_cluster(*args, **kwargs)
+    master_container = create_master_container()
+
+
+def create_aci_client(secrets):
+    return ContainerInstanceManagementClient(credentials, subscription_id, base_url=None)
+
+def create_
