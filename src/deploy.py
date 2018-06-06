@@ -1,10 +1,11 @@
 import azure.mgmt.containerinstance
+from msrestazure.azure_active_directory import ServicePrincipalCredentials
 import yaml
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
 from azure.mgmt.containerinstance.models import (
     Container, ContainerGroup, ContainerGroupNetworkProtocol, ContainerPort,
     IpAddress, OperatingSystemTypes, Port, ResourceRequests,
-    ResourceRequirements)
+    ResourceRequirements, EnvironmentVariable)
 
 
 def create_container_group(aci_client, resource_group, container_group_name,
@@ -107,15 +108,24 @@ def create_spark_cluster(*args, **kwargs):
         create_worker_container() for i in kwargs.get("worker_count")
     ]
 
+    cg = create_container_group()
+    
+
 
 def create_aci_client(secrets):
+    credentials = ServicePrincipalCredentials(
+        client_id=secrets.client_id, secret=secrets.secret)
     return ContainerInstanceManagementClient(
-        credentials, subscription_id, base_url=None)
+        credentials, secrets.subscription_id, base_url=None)
 
 
 def read_secrets(secrets_file):
-    pass
+    return yaml.load(secrets_file)
 
 
 if __name__ == "__main__":
-    client = create_aci_client(read_secrets())
+    import os
+    secrets_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+        "secrets.yaml")
+    client = create_aci_client(read_secrets(secrets_path))
