@@ -8,4 +8,5 @@ class ServicePrincipal:
         self.client_id = service_principal_dict['client_id']
         self.tenant_id = service_principal_dict['tenant_id']
         self.credential = service_principal_dict['credential']
-        return self        
+        return self
+        
