@@ -1,19 +1,14 @@
-
-
 import azure.mgmt.containerinstance
-from azure.mgmt.containerinstance.models import(
-    ContainerGroup,
-    Container,
-    ContainerInstanceManagementClient
-)
-
 import yaml
+from azure.mgmt.containerinstance import ContainerInstanceManagementClient
+from azure.mgmt.containerinstance.models import (
+    Container, ContainerGroup, ContainerGroupNetworkProtocol, ContainerPort,
+    IpAddress, OperatingSystemTypes, Port, ResourceRequests,
+    ResourceRequirements)
 
-aci_client = ContainerInstanceManagementClient(credentials, subscription_id, base_url=None)
 
-
-def create_container_group(aci_client, resource_group,
-                           container_group_name, container_image_name):
+def create_container_group(aci_client, resource_group, container_group_name,
+                           container_image_name):
     """Creates a container group with a single container.
 
     Arguments:
@@ -32,25 +27,26 @@ def create_container_group(aci_client, resource_group,
     # Configure the container
     container_resource_requests = ResourceRequests(memory_in_gb=1, cpu=1.0)
     container_resource_requirements = ResourceRequirements(
-                                        requests=container_resource_requests)
-    container = Container(name=container_group_name,
-                          image=container_image_name,
-                          resources=container_resource_requirements,
-                          ports=[ContainerPort(port=80)])
+        requests=container_resource_requests)
+    container = Container(
+        name=container_group_name,
+        image=container_image_name,
+        resources=container_resource_requirements,
+        ports=[ContainerPort(port=80)])
 
     # Configure the container group
     ports = [Port(protocol=ContainerGroupNetworkProtocol.tcp, port=80)]
-    group_ip_address = IpAddress(ports=ports,
-                                 dns_name_label=container_group_name)
-    group = ContainerGroup(location=resource_group.location,
-                           containers=[container],
-                           os_type=OperatingSystemTypes.linux,
-                           ip_address=group_ip_address)
+    group_ip_address = IpAddress(
+        ports=ports, dns_name_label=container_group_name)
+    group = ContainerGroup(
+        location=resource_group.location,
+        containers=[container],
+        os_type=OperatingSystemTypes.linux,
+        ip_address=group_ip_address)
 
     # Create the container group
     aci_client.container_groups.create_or_update(resource_group.name,
-                                                 container_group_name,
-                                                 group)
+                                                 container_group_name, group)
 
     # Get the created container group
     container_group = aci_client.container_groups.get(resource_group.name,
@@ -61,32 +57,65 @@ def create_container_group(aci_client, resource_group,
                                container_group.ip_address.fqdn))
 
 
-
 def create_container(*args, **kwargs):
-    return Container(name, image, resources, command=None, ports=None, environment_variables=None, volume_mounts=None)
+    return Container(
+        kwargs.get('name'),
+        kwargs.get('image'),
+        kwargs.get('resources'),
+        command=None,
+        ports=None,
+        environment_variables=None,
+        volume_mounts=None)
 
 
 def create_master_container(*args, **kwargs):
-    return create_container(name, image, resources, command=None, ports=None, environment_variables=None, volume_mounts=None)
+    return create_container(
+        kwargs.get('name'),
+        kwargs.get('image'),
+        kwargs.get('resources'),
+        command=None,
+        ports=None,
+        environment_variables=None,
+        volume_mounts=None)
 
 
 def create_worker_container(*args, **kwargs):
-    return create_container(name, image, resources, command=None, ports=None, environment_variables=None, volume_mounts=None)
+    return create_container(
+        kwargs.get('name'),
+        kwargs.get('image'),
+        kwargs.get('resources'),
+        command=None,
+        ports=None,
+        environment_variables=None,
+        volume_mounts=None)
 
 
 def create_extension_container(*args, **kwargs):
-    return create_container(name, image, resources, command=None, ports=None, environment_variables=None, volume_mounts=None)
+    return create_container(
+        kwargs.get('name'),
+        kwargs.get('image'),
+        kwargs.get('resources'),
+        command=None,
+        ports=None,
+        environment_variables=None,
+        volume_mounts=None)
 
 
-def create_spark_cluster(*args, **kwargs)
+def create_spark_cluster(*args, **kwargs):
     master_container = create_master_container()
+    worker_containers = [
+        create_worker_container() for i in kwargs.get("worker_count")
+    ]
 
 
 def create_aci_client(secrets):
-    return ContainerInstanceManagementClient(credentials, subscription_id, base_url=None)
+    return ContainerInstanceManagementClient(
+        credentials, subscription_id, base_url=None)
+
 
 def read_secrets(secrets_file):
-    pass        
+    pass
+
 
 if __name__ == "__main__":
-    client = create_aci_client(read_secrets( ))
+    client = create_aci_client(read_secrets())

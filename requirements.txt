@@ -1,3 +1,4 @@
 azure-mgmt-containerinstance~=0.4.0
 pylint~=1.9.1
 pyyaml~=3.12
+yapf~=0.22.0
