@@ -7,6 +7,7 @@ from azure.mgmt.containerinstance.models import(
     ContainerInstanceManagementClient
 )
 
+import yaml
 
 aci_client = ContainerInstanceManagementClient(credentials, subscription_id, base_url=None)
 
@@ -84,4 +85,8 @@ def create_spark_cluster(*args, **kwargs)
 def create_aci_client(secrets):
     return ContainerInstanceManagementClient(credentials, subscription_id, base_url=None)
 
-def create_
+def read_secrets(secrets_file):
+    pass        
+
+if __name__ == "__main__":
+    client = create_aci_client(read_secrets( ))
