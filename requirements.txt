@@ -3,3 +3,4 @@ pylint~=1.9.1
 pyyaml~=3.12
 yapf~=0.22.0
 msrestazure~=0.4.31
+azure-mgmt-resource~=1.2.2
