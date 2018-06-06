@@ -1,13 +1,17 @@
 import azure.mgmt.containerinstance
-from msrestazure.azure_active_directory import ServicePrincipalCredentials
 import yaml
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
 from azure.mgmt.containerinstance.models import (
     Container, ContainerGroup, ContainerGroupNetworkProtocol, ContainerPort,
-    IpAddress, OperatingSystemTypes, Port, ResourceRequests,
-    ResourceRequirements, EnvironmentVariable)
-from azure.mgmt.resource.resources.models import ResourceGroup, ResourceGroupProperties
-from azure.mgmt.resource.resources.resource_management_client import ResourceManagementClient
+    EnvironmentVariable, IpAddress, OperatingSystemTypes, Port,
+    ResourceRequests, ResourceRequirements)
+from azure.mgmt.resource.resources.models import (ResourceGroup,
+                                                  ResourceGroupProperties)
+from azure.mgmt.resource.resources.resource_management_client import \
+    ResourceManagementClient
+from msrestazure.azure_active_directory import ServicePrincipalCredentials
+
+from models import Secrets
 
 
 def create_container_group_multi(aci_client, resource_group,
@@ -129,9 +133,15 @@ def get_resource_group(resource_management_client, resource_group_name):
         pass
 
 
+def create_service_principal_credentials(secrets):
+    return ServicePrincipalCredentials(
+        client_id=secrets.service_principal.client_id,
+        secret=secrets.service_principal.credential,
+        tenant=secrets.service_principal.tenant_id)
+
+
 def create_aci_client(secrets):
-    credentials = ServicePrincipalCredentials(
-        client_id=secrets.client_id, secret=secrets.secret)
+    credentials = create_service_principal_credentials(secrets)
     return ContainerInstanceManagementClient(
         credentials,
         secrets.subscription_id,
@@ -140,15 +150,14 @@ def create_aci_client(secrets):
 
 
 def create_resource_management_client(secrets):
-    credentials = ServicePrincipalCredentials(
-        client_id=secrets.client_id,
-        secret=secrets,
-    )
+    credentials = create_service_principal_credentials(secrets)
     return ResourceManagementClient(credentials, secrets.subscription_id)
 
 
 def read_secrets(secrets_file):
-    return yaml.load(secrets_file)
+    with open(secrets_file) as stream:
+        secrets_dict = yaml.load(stream)
+    return Secrets().from_dict(secrets_dict)
 
 
 if __name__ == "__main__":
@@ -157,6 +166,7 @@ if __name__ == "__main__":
         os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
         "secrets.yaml")
     secrets = read_secrets(secrets_path)
+    print(secrets)
     aci_client = create_aci_client(secrets)
     resource_management_client = create_resource_management_client(secrets)
 
