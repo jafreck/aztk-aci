@@ -1,0 +1,4 @@
+
+
+class AztkError(Exception):
+    pass

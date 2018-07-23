@@ -1,15 +1,21 @@
 import azure.mgmt.containerinstance
 import yaml
+from azure.cosmosdb.table.models import Entity
+from azure.cosmosdb.table.tableservice import TableService
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
-from azure.mgmt.containerinstance.models import (Container, ContainerGroup, ContainerGroupNetworkProtocol, ContainerPort,
-                                                 ContainerGroupRestartPolicy, EnvironmentVariable, IpAddress,
+from azure.mgmt.containerinstance.models import (Container, ContainerGroup, ContainerGroupNetworkProtocol,
+                                                 ContainerGroupRestartPolicy, ContainerPort, EnvironmentVariable, IpAddress,
                                                  OperatingSystemTypes, Port, ResourceRequests, ResourceRequirements)
 from azure.mgmt.resource.resources.models import (ResourceGroup, ResourceGroupProperties)
 from azure.mgmt.resource.resources.resource_management_client import \
     ResourceManagementClient
+from azure.mgmt.storage import StorageManagementClient
+from azure.storage.common import CloudStorageAccount
 from msrestazure.azure_active_directory import ServicePrincipalCredentials
 
+import constants
 from models import Secrets
+import error
 
 
 def create_container_group_multi(aci_client, resource_group, container_group_name, containers):
@@ -60,7 +66,7 @@ def create_container(*args, **kwargs):
 
 
 def create_spark_master_container(*args, **kwargs):
-    container_resource_requests = ResourceRequests(memory_in_gb=2, cpu=1.0)
+    container_resource_requests = ResourceRequests(memory_in_gb=10, cpu=3.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
     command = [],  #TODO
     return create_container(
@@ -102,7 +108,20 @@ def create_extension_container(*args, **kwargs):
         volume_mounts=kwargs.get('volume_mounts'))
 
 
+def create_cluster_storage_table(*args, **kwargs):
+    table_service = kwargs.get('storage_table_service')
+    # TODO: try-except
+    success = table_service.create_table(kwargs.get('cluster_id'))
+
+    # if not success:
+    #     raise error.AztkError("Storage Table with same name already exists. Please delete the cluster {}".format(kwargs.get('cluster_id')))
+
+
 def create_spark_cluster(*args, **kwargs):
+    create_cluster_storage_table(
+        storage_table_service=kwargs.get('storage_table_service'),
+        cluster_id=kwargs.get('cluster_id'),
+    )
     master_container = [create_spark_master_container(cluster_id=kwargs.get('cluster_id'), image=kwargs.get('image'))]
     worker_containers = [
         create_spark_worker_container(
@@ -114,13 +133,31 @@ def create_spark_cluster(*args, **kwargs):
 
     resource_group = get_resource_group(kwargs.get('resource_management_client'), kwargs.get('resource_group_name'))
 
-    cg = create_container_group_multi(
-        aci_client=kwargs.get('aci_client'),
-        resource_group=resource_group,
-        container_group_name=kwargs.get('cluster_id'),
-        containers=master_container + worker_containers,
-    )
-    return cg
+    # create master container
+    master_container_group = [
+        create_container_group_multi(
+            aci_client=kwargs.get('aci_client'),
+            resource_group=resource_group,
+            container_group_name=kwargs.get('cluster_id'),
+            containers=master_container,
+        )
+    ]
+    # get master container ip
+    print(master_container_group[0].ip_address)
+    raise Error
+
+    # crete worker containers
+    worker_container_groups = []
+    for container in worker_containers:
+        worker_container_groups.append(
+            create_container_group_multi(
+                aci_client=kwargs.get('aci_client'),
+                resource_group=resource_group,
+                container_group_name=kwargs.get('cluster_id'),
+                containers=container,
+            ))
+
+    return master_container_group + worker_container_groups
 
 
 #TODO: change to get_or_create_resource_group
@@ -153,6 +190,21 @@ def create_resource_management_client(secrets):
     return ResourceManagementClient(credentials, secrets.subscription_id)
 
 
+def create_storage_table_service(secrets):
+    credentials = create_service_principal_credentials(secrets)
+    match = constants.RESOURCE_ID_PATTERN.match(secrets.storage_account_resource_id)
+    accountname = match.group('account')
+    subscription = match.group('subscription')
+    resourcegroup = match.group('resourcegroup')
+    mgmt_client = StorageManagementClient(credentials, subscription)
+    key = mgmt_client.storage_accounts.list_keys(resource_group_name=resourcegroup, account_name=accountname).keys[0].value
+    # storage_client = CloudStorageAccount(accountname, key)
+    # blob_client = storage_client.create_block_blob_service()
+    table_service = TableService(account_name=accountname, account_key=key)
+
+    return table_service
+
+
 def read_secrets(secrets_file):
     with open(secrets_file) as stream:
         secrets_dict = yaml.load(stream)
@@ -163,14 +215,18 @@ if __name__ == "__main__":
     import os
     secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "secrets.yaml")
     secrets = read_secrets(secrets_path)
-    print(secrets)
+    # print(secrets.__dict__)
     aci_client = create_aci_client(secrets)
+
     resource_management_client = create_resource_management_client(secrets)
 
-    cluster = create_spark_cluster(
+    storage_table_service = create_storage_table_service(secrets)
+
+    container_groups = create_spark_cluster(
         worker_count=2,
         resource_management_client=resource_management_client,
+        storage_table_service=storage_table_service,
         image="aztk/spark:v0.1.0-spark2.3.0-base",
         aci_client=aci_client,
         resource_group_name="spark-aci",
-        cluster_id="test-spark-cluster")
+        cluster_id="testsparkcluster")

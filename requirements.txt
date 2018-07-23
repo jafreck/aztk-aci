@@ -4,3 +4,6 @@ pyyaml~=3.12
 yapf~=0.22.0
 msrestazure~=0.4.31
 azure-mgmt-resource~=1.2.2
+azure-storage-blob~=1.1.0
+azure-cosmosdb-table~=1.0.4
+azure-mgmt-storage==1.5.0

@@ -1,4 +1,5 @@
 class ServicePrincipal:
+
     def __init__(self):
         self.client_id = None
         self.tenant_id = None
