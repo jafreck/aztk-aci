@@ -1,13 +1,13 @@
 # Ubuntu 16.04 (Xenial)
-FROM ubuntu:16.04
+FROM ubuntu:16.04 as build-spark
 
 # modify these ARGs on build time to specify your desired versions of Spark/Hadoop
-ARG SPARK_VERSION_KEY=2.3.0
-ARG SPARK_FULL_VERSION=spark-${SPARK_VERSION_KEY}-bin-without-hadoop
-ARG HADOOP_VERSION=2.8.3
+ENV SPARK_VERSION_KEY 2.3.0
+ENV SPARK_FULL_VERSION spark-${SPARK_VERSION_KEY}-bin-without-hadoop
+ENV HADOOP_VERSION 2.8.3
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
 # set env vars
-ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 ENV JAVA_HOME /usr/lib/jvm/java-1.8.0-openjdk-amd64
 ENV SPARK_HOME /home/spark-current
 ENV PATH $SPARK_HOME/bin:$PATH
@@ -148,5 +148,34 @@ RUN apt-get clean \
     && rm -rf /root/.cache \
     && rm -rf /root/.m2 \
     && rm -rf /var/lib/apt/lists/*
+
+
+
+
+
+FROM ubuntu:16.04
+ARG HADOOP_VERSION=3.1.0
+
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+ENV SPARK_HOME /opt/spark-current
+ENV PATH $SPARK_HOME/bin:$PATH
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        openjdk-8-jdk \
+        supervisor \
+    && apt-get autoclean -y \
+    && rm -rf /var/lib/apt/lists/*
+
+
+RUN mkdir -p /var/run/supervisor
+
+COPY --from=build-spark /home/spark-current /opt/spark
+
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY supervisord.conf /etc/supervisord.conf
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 CMD ["/bin/bash"]
