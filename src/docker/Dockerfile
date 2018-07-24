@@ -16,24 +16,24 @@ RUN apt-get clean \
     && apt-get update -y \
     # install dependency packages
     && apt-get install -y --no-install-recommends \
-       make \
-       build-essential \
-       zlib1g-dev \
-       libssl-dev \
-       libbz2-dev \
-       libreadline-dev \
-       libsqlite3-dev \
-       maven \
-       wget \
-       curl \
-       llvm \
-       git \
-       libncurses5-dev \
-       libncursesw5-dev \
-       python3-pip \
-       python3-venv \
-       xz-utils \
-       tk-dev \
+    make \
+    build-essential \
+    zlib1g-dev \
+    libssl-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    maven \
+    wget \
+    curl \
+    llvm \
+    git \
+    libncurses5-dev \
+    libncursesw5-dev \
+    python3-pip \
+    python3-venv \
+    xz-utils \
+    tk-dev \
     && apt-get update -y \
     # install [software-properties-common]
     # so we can use [apt-add-repository] to add the repository [ppa:webupd8team/java]
@@ -58,86 +58,86 @@ RUN apt-get clean \
     && rm -rf /spark \ 
     # copy azure storage jars and dependencies to $SPARK_HOME/jars
     && echo "<project>" \
-                    "<modelVersion>4.0.0</modelVersion>" \
-                    "<groupId>groupId</groupId>" \
-                    "<artifactId>artifactId</artifactId>" \
-                    "<version>1.0</version>" \
-                "<dependencies>" \
-                    "<dependency>" \
-                        "<groupId>org.apache.hadoop</groupId>" \
-                        "<artifactId>hadoop-azure-datalake</artifactId>" \
-                        "<version>${HADOOP_VERSION}</version>" \
-                    "<exclusions>" \
-                        "<exclusion>" \
-                            "<groupId>org.apache.hadoop</groupId>" \
-                            "<artifactId>hadoop-common</artifactId>" \
-                        "</exclusion>" \
-                    "</exclusions> " \
-                    "</dependency>" \
-                    "<dependency>" \
-                        "<groupId>org.apache.hadoop</groupId>" \
-                        "<artifactId>hadoop-azure</artifactId>" \
-                        "<version>${HADOOP_VERSION}</version>" \
-                    "<exclusions>" \
-                        "<exclusion>" \
-                            "<groupId>org.apache.hadoop</groupId>" \
-                            "<artifactId>hadoop-common</artifactId>" \
-                        "</exclusion>" \
-                        "<exclusion>" \
-                            "<groupId>com.fasterxml.jackson.core</groupId>" \
-                            "<artifactId>jackson-core</artifactId>" \
-                        "</exclusion>" \
-                    "</exclusions> " \
-                    "</dependency>" \
-                    "<dependency>" \
-                        "<groupId>com.microsoft.sqlserver</groupId>" \
-                        "<artifactId>mssql-jdbc</artifactId>" \
-                        "<version>6.4.0.jre8</version>" \
-                    "</dependency>" \
-                    "<dependency>" \
-                        "<groupId>com.microsoft.azure</groupId>" \
-                        "<artifactId>azure-storage</artifactId>" \
-                        "<version>2.2.0</version>" \
-                        "<exclusions>" \
-                            "<exclusion>" \
-                                "<groupId>com.fasterxml.jackson.core</groupId>" \
-                                "<artifactId>jackson-core</artifactId>" \
-                            "</exclusion>" \
-                            "<exclusion>" \
-                                "<groupId>org.apache.commons</groupId>" \
-                                "<artifactId>commons-lang3</artifactId>" \
-                            "</exclusion>" \
-                            "<exclusion>" \
-                                "<groupId>org.slf4j</groupId>" \
-                                "<artifactId>slf4j-api</artifactId>" \
-                            "</exclusion>" \
-                        "</exclusions>" \
-                    "</dependency>" \
-                    "<dependency>" \
-                        "<groupId>com.microsoft.azure</groupId>" \
-                        "<artifactId>azure-cosmosdb-spark_2.2.0_2.11</artifactId>" \
-                        "<version>1.1.1</version>" \
-                        "<exclusions>" \
-                            "<exclusion>" \
-                                "<groupId>org.apache.tinkerpop</groupId>" \
-                                "<artifactId>tinkergraph-gremlin</artifactId>" \
-                            "</exclusion>" \
-                            "<exclusion>" \
-                                "<groupId>org.apache.tinkerpop</groupId>" \
-                                "<artifactId>spark-gremlin</artifactId>" \
-                            "</exclusion>" \
-                            "<exclusion>" \
-                                "<groupId>io.netty</groupId>" \
-                                "<artifactId>*</artifactId>" \
-                            "</exclusion>" \
-                            "<exclusion>" \
-                                "<groupId>com.fasterxml.jackson.core</groupId>" \
-                                "<artifactId>jackson-annotations</artifactId>" \
-                            "</exclusion>" \
-                        "</exclusions> " \
-                    "</dependency>" \
-                "</dependencies>" \
-            "</project>" > /tmp/pom.xml \
+    "<modelVersion>4.0.0</modelVersion>" \
+    "<groupId>groupId</groupId>" \
+    "<artifactId>artifactId</artifactId>" \
+    "<version>1.0</version>" \
+    "<dependencies>" \
+    "<dependency>" \
+    "<groupId>org.apache.hadoop</groupId>" \
+    "<artifactId>hadoop-azure-datalake</artifactId>" \
+    "<version>${HADOOP_VERSION}</version>" \
+    "<exclusions>" \
+    "<exclusion>" \
+    "<groupId>org.apache.hadoop</groupId>" \
+    "<artifactId>hadoop-common</artifactId>" \
+    "</exclusion>" \
+    "</exclusions> " \
+    "</dependency>" \
+    "<dependency>" \
+    "<groupId>org.apache.hadoop</groupId>" \
+    "<artifactId>hadoop-azure</artifactId>" \
+    "<version>${HADOOP_VERSION}</version>" \
+    "<exclusions>" \
+    "<exclusion>" \
+    "<groupId>org.apache.hadoop</groupId>" \
+    "<artifactId>hadoop-common</artifactId>" \
+    "</exclusion>" \
+    "<exclusion>" \
+    "<groupId>com.fasterxml.jackson.core</groupId>" \
+    "<artifactId>jackson-core</artifactId>" \
+    "</exclusion>" \
+    "</exclusions> " \
+    "</dependency>" \
+    "<dependency>" \
+    "<groupId>com.microsoft.sqlserver</groupId>" \
+    "<artifactId>mssql-jdbc</artifactId>" \
+    "<version>6.4.0.jre8</version>" \
+    "</dependency>" \
+    "<dependency>" \
+    "<groupId>com.microsoft.azure</groupId>" \
+    "<artifactId>azure-storage</artifactId>" \
+    "<version>2.2.0</version>" \
+    "<exclusions>" \
+    "<exclusion>" \
+    "<groupId>com.fasterxml.jackson.core</groupId>" \
+    "<artifactId>jackson-core</artifactId>" \
+    "</exclusion>" \
+    "<exclusion>" \
+    "<groupId>org.apache.commons</groupId>" \
+    "<artifactId>commons-lang3</artifactId>" \
+    "</exclusion>" \
+    "<exclusion>" \
+    "<groupId>org.slf4j</groupId>" \
+    "<artifactId>slf4j-api</artifactId>" \
+    "</exclusion>" \
+    "</exclusions>" \
+    "</dependency>" \
+    "<dependency>" \
+    "<groupId>com.microsoft.azure</groupId>" \
+    "<artifactId>azure-cosmosdb-spark_2.2.0_2.11</artifactId>" \
+    "<version>1.1.1</version>" \
+    "<exclusions>" \
+    "<exclusion>" \
+    "<groupId>org.apache.tinkerpop</groupId>" \
+    "<artifactId>tinkergraph-gremlin</artifactId>" \
+    "</exclusion>" \
+    "<exclusion>" \
+    "<groupId>org.apache.tinkerpop</groupId>" \
+    "<artifactId>spark-gremlin</artifactId>" \
+    "</exclusion>" \
+    "<exclusion>" \
+    "<groupId>io.netty</groupId>" \
+    "<artifactId>*</artifactId>" \
+    "</exclusion>" \
+    "<exclusion>" \
+    "<groupId>com.fasterxml.jackson.core</groupId>" \
+    "<artifactId>jackson-annotations</artifactId>" \
+    "</exclusion>" \
+    "</exclusions> " \
+    "</dependency>" \
+    "</dependencies>" \
+    "</project>" > /tmp/pom.xml \
     && cd /tmp \
     && mvn dependency:copy-dependencies -DoutputDirectory="${SPARK_HOME}/jars/" \
     # cleanup
@@ -157,14 +157,14 @@ FROM ubuntu:16.04
 ARG HADOOP_VERSION=3.1.0
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
-ENV SPARK_HOME /opt/spark-current
+ENV SPARK_HOME /opt/spark
 ENV PATH $SPARK_HOME/bin:$PATH
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        curl \
-        openjdk-8-jdk \
-        supervisor \
+    curl \
+    openjdk-8-jdk \
+    supervisor \
     && apt-get autoclean -y \
     && rm -rf /var/lib/apt/lists/*
 
