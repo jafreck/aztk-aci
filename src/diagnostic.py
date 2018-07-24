@@ -1,3 +1,5 @@
+from azure.mgmt.containerinstance.models import ContainerExecRequestTerminalSize
+
 if __name__ == "__main__":
     import deploy
     import os
@@ -9,7 +11,15 @@ if __name__ == "__main__":
     container_group_name = sys.argv[1]
     print(aci_client.container.list_logs("spark-aci", container_group_name, container_group_name + "-master"))
 
-    # aci_client.container.execute_command("spark-aci", container_group_name, container_group_name + "-master", command=sys.argv[2])
+    result = aci_client.container.execute_command(
+        "spark-aci",
+        container_group_name,
+        container_group_name + "-master",
+        command=sys.argv[2],
+        terminal_size=ContainerExecRequestTerminalSize(rows=100, cols=120),
+    )
+    print(result)
+
     cg = aci_client.container_groups.get("spark-aci", container_group_name)
     master_container = cg.containers[0]
     print(master_container.instance_view.events[-1].message)
