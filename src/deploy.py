@@ -52,7 +52,7 @@ def create_container_group_multi(**kwargs):
     container_group_name = kwargs.get('container_group_name')
     containers = kwargs.get('containers')
 
-    print("Creating container group '{0}'...".format(container_group_name))
+    # print("Creating container group '{0}'...".format(container_group_name))
 
     # Configure the container group
     ports = []
@@ -73,8 +73,8 @@ def create_container_group_multi(**kwargs):
     # Get the created container group
     container_group = aci_client.container_groups.get(resource_group.name, container_group_name)
 
-    print("Once DNS has propagated, container group '{0}' will be reachable at"
-          " http://{1}".format(container_group_name, container_group.ip_address.fqdn))
+    # print("Once DNS has propagated, container group '{0}' will be reachable at"
+    #       " http://{1}".format(container_group_name, container_group.ip_address.fqdn))
     return container_group
 
 
