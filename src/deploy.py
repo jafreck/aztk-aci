@@ -1,12 +1,27 @@
+import concurrent.futures
+
 import azure.mgmt.containerinstance
 import yaml
 from azure.cosmosdb.table.models import Entity
 from azure.cosmosdb.table.tableservice import TableService
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
-from azure.mgmt.containerinstance.models import (Container, ContainerGroup, ContainerGroupNetworkProtocol,
-                                                 ContainerGroupRestartPolicy, ContainerPort, EnvironmentVariable, IpAddress,
-                                                 OperatingSystemTypes, Port, ResourceRequests, ResourceRequirements)
-from azure.mgmt.resource.resources.models import (ResourceGroup, ResourceGroupProperties)
+from azure.mgmt.containerinstance.models import (
+    Container,
+    ContainerGroup,
+    ContainerGroupNetworkProtocol,
+    ContainerGroupRestartPolicy,
+    ContainerPort,
+    EnvironmentVariable,
+    IpAddress,
+    OperatingSystemTypes,
+    Port,
+    ResourceRequests,
+    ResourceRequirements,
+)
+from azure.mgmt.resource.resources.models import (
+    ResourceGroup,
+    ResourceGroupProperties,
+)
 from azure.mgmt.resource.resources.resource_management_client import \
     ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
@@ -169,17 +184,22 @@ def create_spark_cluster(*args, **kwargs):
     ]
 
     # create worker container groups
-    worker_container_groups = []
-    for container in worker_containers:
-        worker_container_groups.append(
-            create_container_group_multi(
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {
+            executor.submit(
+                create_container_group_multi,
                 aci_client=kwargs.get('aci_client'),
                 resource_group=resource_group,
                 container_group_name=container.name,
                 containers=[container],
                 container_group_ports=[
                     Port(protocol=ContainerGroupNetworkProtocol.tcp, port=7077),
-                ]))
+                ],
+            ): container for container in worker_containers
+        }
+        completed_futures = concurrent.futures.wait(futures, timeout=30, return_when=concurrent.futures.ALL_COMPLETED)
+        #TODO: handle errors if future is not of type azure.mgmt.containerinstance.models.ContainerGroup
+        worker_container_groups = [completed_future.result() for completed_future in completed_futures]
 
     return [master_container_group] + worker_container_groups
 
@@ -248,7 +268,7 @@ if __name__ == "__main__":
     storage_table_service = create_storage_table_service(secrets)
 
     container_groups = create_spark_cluster(
-        worker_count=1,
+        worker_count=50,
         resource_management_client=resource_management_client,
         storage_table_service=storage_table_service,
         image="aztk/staging:spark-aci",
