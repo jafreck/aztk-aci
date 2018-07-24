@@ -14,11 +14,11 @@ from azure.storage.common import CloudStorageAccount
 from msrestazure.azure_active_directory import ServicePrincipalCredentials
 
 import constants
-from models import Secrets
 import error
+from models import Secrets
 
 
-def create_container_group_multi(aci_client, resource_group, container_group_name, containers):
+def create_container_group_multi(**kwargs):
     """Creates a container group with two containers in the specified
        resource group.
 
@@ -29,15 +29,20 @@ def create_container_group_multi(aci_client, resource_group, container_group_nam
                     -- The resource group in which to create the container group.
         container_group_name {str}
                     -- The name of the container group to create.
-        containers {List[azure.mgmt.containerinstance.Container]}
+        containers {List[azure.mgmt.containerinstance.models.Container]}
+        container_group_ports {List[azure.mgmt.containerinstance.models.Port]}
     """
+    aci_client = kwargs.get('aci_client')
+    resource_group = kwargs.get('resource_group')
+    container_group_name = kwargs.get('container_group_name')
+    containers = kwargs.get('containers')
+
     print("Creating container group '{0}'...".format(container_group_name))
 
     # Configure the container group
-    ports = [
-        Port(protocol=ContainerGroupNetworkProtocol.tcp, port=8080),
-        Port(protocol=ContainerGroupNetworkProtocol.tcp, port=7077),
-    ]
+    ports = []
+    for container_group_port in kwargs.get('container_group_ports'):
+        ports.append(container_group_port)
 
     group_ip_address = IpAddress(ports=ports, dns_name_label=container_group_name)
     group = ContainerGroup(
@@ -72,12 +77,12 @@ def create_container(*args, **kwargs):
 def create_spark_master_container(*args, **kwargs):
     container_resource_requests = ResourceRequests(memory_in_gb=5, cpu=1.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
-    command = ["/bin/bash -c 'supervisorctl start master'"]  #TODO
+    # command = ["/bin/bash", "-c", "\"/usr/bin/supervisorctl start master\""]  #TODO
     return create_container(
         container_name=kwargs.get('cluster_id') + '-master',
-        image=kwargs.get('image'),
+        image=kwargs.get('image') + "-master",
         resources=container_resource_requirements,
-        command=command,
+        # command=command,
         ports=[
             ContainerPort(port=8080, protocol='TCP'),
             ContainerPort(port=7077, protocol='TCP'),
@@ -89,15 +94,18 @@ def create_spark_master_container(*args, **kwargs):
 def create_spark_worker_container(*args, **kwargs):
     container_resource_requests = ResourceRequests(memory_in_gb=2, cpu=1.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
-    command = ["worker {}".format(kwargs.get('master_ip'))]  #TODO
+    # command = ["worker {}".format(kwargs.get('master_ip'))]  #TODO
     container_name = kwargs.get('cluster_id') + '-worker-' + str(kwargs.get("worker_number"))
     return create_container(
         container_name=container_name,
-        image=kwargs.get('image'),
+        image=kwargs.get('image') + "-worker",
         resources=container_resource_requirements,
-        command=command,
-        ports=[],  #TODO
-        environment_variables=kwargs.get('environment_variables'),
+        # command=command,
+        environment_variables=[EnvironmentVariable(name="MASTER_IP", value=kwargs.get('master_ip'))],
+        ports=[
+            ContainerPort(port=7077, protocol='TCP'),
+            ContainerPort(port=4040, protocol='TCP'),
+        ],
         volume_mounts=kwargs.get('volume_mounts'))
 
 
@@ -133,42 +141,47 @@ def create_spark_cluster(*args, **kwargs):
     resource_group = get_resource_group(kwargs.get('resource_management_client'), kwargs.get('resource_group_name'))
 
     # define master container
-    master_container = [create_spark_master_container(cluster_id=kwargs.get('cluster_id'), image=kwargs.get('image'))]
+    master_container = create_spark_master_container(cluster_id=kwargs.get('cluster_id'), image=kwargs.get('image'))
 
     # create master container group
     master_container_group = create_container_group_multi(
         aci_client=kwargs.get('aci_client'),
         resource_group=resource_group,
         container_group_name=kwargs.get('cluster_id'),
-        containers=master_container,
-    )
+        containers=[master_container],
+        container_group_ports=[
+            Port(protocol=ContainerGroupNetworkProtocol.tcp, port=8080),
+            Port(protocol=ContainerGroupNetworkProtocol.tcp, port=7077),
+        ])
 
     while master_container_group.ip_address.ip is None:
         master_container_group = kwargs.get('aci_client').container_groups.get(
             kwargs.get('resource_group_name'), kwargs.get('cluster_id'))
 
-    # # define worker containers
-    # worker_containers = [
-    #     create_spark_worker_container(
-    #         cluster_id=kwargs.get('cluster_id'),
-    #         image=kwargs.get('image'),
-    #         worker_number=i,
-    #         master_ip=master_container_group.ip_address.ip,
-    #     ) for i in range(kwargs.get("worker_count"))
-    # ]
+    # define worker containers
+    worker_containers = [
+        create_spark_worker_container(
+            cluster_id=kwargs.get('cluster_id'),
+            image=kwargs.get('image'),
+            worker_number=i,
+            master_ip=master_container_group.ip_address.ip,
+        ) for i in range(kwargs.get("worker_count"))
+    ]
 
-    # # create worker container groups
-    # worker_container_groups = []
-    # for container in worker_containers:
-    #     worker_container_groups.append(
-    #         create_container_group_multi(
-    #             aci_client=kwargs.get('aci_client'),
-    #             resource_group=resource_group,
-    #             container_group_name=kwargs.get('cluster_id'),
-    #             containers=container,
-    #         ))
+    # create worker container groups
+    worker_container_groups = []
+    for container in worker_containers:
+        worker_container_groups.append(
+            create_container_group_multi(
+                aci_client=kwargs.get('aci_client'),
+                resource_group=resource_group,
+                container_group_name=container.name,
+                containers=[container],
+                container_group_ports=[
+                    Port(protocol=ContainerGroupNetworkProtocol.tcp, port=7077),
+                ]))
 
-    # return [master_container_group] + worker_container_groups
+    return [master_container_group] + worker_container_groups
 
 
 #TODO: change to get_or_create_resource_group
@@ -235,7 +248,7 @@ if __name__ == "__main__":
     storage_table_service = create_storage_table_service(secrets)
 
     container_groups = create_spark_cluster(
-        worker_count=2,
+        worker_count=1,
         resource_management_client=resource_management_client,
         storage_table_service=storage_table_service,
         image="aztk/staging:spark-aci",
