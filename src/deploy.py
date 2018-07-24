@@ -82,7 +82,7 @@ def create_spark_master_container(*args, **kwargs):
 def create_spark_worker_container(*args, **kwargs):
     container_resource_requests = ResourceRequests(memory_in_gb=2, cpu=1.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
-    command = [],  #TODO
+    command = ["worker {}".format(kwargs.get('master_ip'))]  #TODO
     container_name = kwargs.get('cluster_id') + '-worker-' + str(kwargs.get("worker_number"))
     return create_container(
         container_name=container_name,
@@ -118,35 +118,39 @@ def create_cluster_storage_table(*args, **kwargs):
 
 
 def create_spark_cluster(*args, **kwargs):
+    # create storage table and resource group to hold aci instances
     create_cluster_storage_table(
         storage_table_service=kwargs.get('storage_table_service'),
         cluster_id=kwargs.get('cluster_id'),
     )
+    resource_group = get_resource_group(kwargs.get('resource_management_client'), kwargs.get('resource_group_name'))
+
+    # define master container
     master_container = [create_spark_master_container(cluster_id=kwargs.get('cluster_id'), image=kwargs.get('image'))]
+
+    # create master container group
+    master_container_group = create_container_group_multi(
+        aci_client=kwargs.get('aci_client'),
+        resource_group=resource_group,
+        container_group_name=kwargs.get('cluster_id'),
+        containers=master_container,
+    )
+
+    while master_container_group.ip_address.ip is None:
+        master_container_group = kwargs.get('aci_client').container_groups.get(
+            kwargs.get('resource_group_name'), kwargs.get('cluster_id'))
+
+    # define worker containers
     worker_containers = [
         create_spark_worker_container(
             cluster_id=kwargs.get('cluster_id'),
             image=kwargs.get('image'),
             worker_number=i,
+            master_ip=master_container_group.ip_address.ip,
         ) for i in range(kwargs.get("worker_count"))
     ]
 
-    resource_group = get_resource_group(kwargs.get('resource_management_client'), kwargs.get('resource_group_name'))
-
-    # create master container
-    master_container_group = [
-        create_container_group_multi(
-            aci_client=kwargs.get('aci_client'),
-            resource_group=resource_group,
-            container_group_name=kwargs.get('cluster_id'),
-            containers=master_container,
-        )
-    ]
-    # get master container ip
-    print(master_container_group[0].ip_address)
-    raise Error
-
-    # crete worker containers
+    # create worker container groups
     worker_container_groups = []
     for container in worker_containers:
         worker_container_groups.append(
@@ -157,7 +161,7 @@ def create_spark_cluster(*args, **kwargs):
                 containers=container,
             ))
 
-    return master_container_group + worker_container_groups
+    return [master_container_group] + worker_container_groups
 
 
 #TODO: change to get_or_create_resource_group
