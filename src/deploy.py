@@ -137,7 +137,7 @@ def create_cluster_storage_table(*args, **kwargs):
 
 
 def insert_entity_to_table(storage_table_service, table_name, entity):
-    log.info("inserting:", entity, "to", table_name)
+    log.info("inserting:{} to table {}".format(entity, table_name))
     storage_table_service.insert_entity(table_name, entity)
 
 
