@@ -1,5 +1,10 @@
 from azure.mgmt.containerinstance.models import ContainerExecRequestTerminalSize
 
+
+def diagnostic(id: str):
+    pass
+
+
 if __name__ == "__main__":
     import deploy
     import os

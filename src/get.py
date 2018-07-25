@@ -46,6 +46,10 @@ def get_cluster(**kwargs):
     print_cluster(cluster_id=cluster_id, entities=entities)
 
 
+def get(id: str):
+    pass
+
+
 if __name__ == "__main__":
     import os
     import sys

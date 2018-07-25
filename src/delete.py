@@ -31,6 +31,10 @@ def delete_cluster(**kwargs):
         concurrent.futures.wait(futures, timeout=30, return_when=concurrent.futures.ALL_COMPLETED)
 
 
+def delete(id: str):
+    pass
+
+
 if __name__ == "__main__":
     import deploy
     import os

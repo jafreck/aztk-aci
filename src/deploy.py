@@ -291,6 +291,10 @@ def read_secrets(secrets_file):
     return Secrets().from_dict(secrets_dict)
 
 
+def deploy(cluster_configuration):
+    pass
+
+
 if __name__ == "__main__":
     import os
     import sys
