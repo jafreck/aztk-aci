@@ -1,6 +1,6 @@
 import concurrent.futures
 
-from logger import log
+from aztk_aci.logger import log
 
 
 def delete_container_group(aci_client, resource_group, container_group_name):

@@ -1,5 +1,5 @@
-import models
-import deploy, delete, get, diagnostics
+from aztk_aci import models
+from .operations import deploy, delete, get, diagnostics
 
 
 class ClusterOperations():

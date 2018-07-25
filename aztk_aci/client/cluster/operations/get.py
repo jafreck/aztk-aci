@@ -1,4 +1,4 @@
-import deploy
+from . import deploy
 
 
 def print_cluster(**kwargs):

@@ -15,10 +15,10 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.storage.common import CloudStorageAccount
 from msrestazure.azure_active_directory import ServicePrincipalCredentials
 
-import constants
-import error
-from logger import log
-from models import Secrets
+from aztk_aci import constants
+from aztk_aci import error
+from aztk_aci.logger import log
+from aztk_aci.models import Secrets
 
 
 def create_container_group_multi(**kwargs):
