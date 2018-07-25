@@ -5,23 +5,10 @@ import yaml
 from azure.cosmosdb.table.models import Entity
 from azure.cosmosdb.table.tableservice import TableService
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
-from azure.mgmt.containerinstance.models import (
-    Container,
-    ContainerGroup,
-    ContainerGroupNetworkProtocol,
-    ContainerGroupRestartPolicy,
-    ContainerPort,
-    EnvironmentVariable,
-    IpAddress,
-    OperatingSystemTypes,
-    Port,
-    ResourceRequests,
-    ResourceRequirements,
-)
-from azure.mgmt.resource.resources.models import (
-    ResourceGroup,
-    ResourceGroupProperties,
-)
+from azure.mgmt.containerinstance.models import (Container, ContainerGroup, ContainerGroupNetworkProtocol,
+                                                 ContainerGroupRestartPolicy, ContainerPort, EnvironmentVariable, IpAddress,
+                                                 OperatingSystemTypes, Port, ResourceRequests, ResourceRequirements)
+from azure.mgmt.resource.resources.models import (ResourceGroup, ResourceGroupProperties)
 from azure.mgmt.resource.resources.resource_management_client import \
     ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
@@ -30,6 +17,7 @@ from msrestazure.azure_active_directory import ServicePrincipalCredentials
 
 import constants
 import error
+from logger import log
 from models import Secrets
 
 
@@ -52,7 +40,7 @@ def create_container_group_multi(**kwargs):
     container_group_name = kwargs.get('container_group_name')
     containers = kwargs.get('containers')
 
-    # print("Creating container group '{0}'...".format(container_group_name))
+    log.info("Creating container group '{0}'...".format(container_group_name))
 
     # Configure the container group
     ports = []
@@ -73,8 +61,9 @@ def create_container_group_multi(**kwargs):
     # Get the created container group
     container_group = aci_client.container_groups.get(resource_group.name, container_group_name)
 
-    # print("Once DNS has propagated, container group '{0}' will be reachable at"
-    #       " http://{1}".format(container_group_name, container_group.ip_address.fqdn))
+    log.info("Once DNS has propagated, container group '{0}' will be reachable at"
+             " http://{1}".format(container_group_name, container_group.ip_address.fqdn))
+
     return container_group
 
 
@@ -90,7 +79,7 @@ def create_container(*args, **kwargs):
 
 
 def create_spark_master_container(*args, **kwargs):
-    container_resource_requests = ResourceRequests(memory_in_gb=5, cpu=1.0)
+    container_resource_requests = ResourceRequests(memory_in_gb=2, cpu=1.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
     # command = ["/bin/bash", "-c", "\"/usr/bin/supervisorctl start master\""]  #TODO
     return create_container(
@@ -147,13 +136,43 @@ def create_cluster_storage_table(*args, **kwargs):
     #     raise error.AztkError("Storage Table with same name already exists. Please delete the cluster {}".format(kwargs.get('cluster_id')))
 
 
+def insert_entity_to_table(storage_table_service, table_name, entity):
+    log.info("inserting:", entity, "to", table_name)
+    storage_table_service.insert_entity(table_name, entity)
+
+
+def update_storage_cluster_table(**kwargs):
+    import uuid
+    storage_table_service = kwargs.get('storage_table_service')
+    cluster_id = kwargs.get('cluster_id')
+    container_groups = kwargs.get('container_groups')
+
+    entities = []
+    for container_group in container_groups:
+        entity = Entity()
+        entity.PartitionKey = 'id'
+        entity.RowKey = str(uuid.uuid4())
+        entity.id = container_group.name
+        entity.ip = container_group.ip_address.ip
+        entities.append(entity)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {
+            executor.submit(insert_entity_to_table, storage_table_service, cluster_id, entity): entity for entity in entities
+        }
+    concurrent.futures.wait(futures, timeout=30, return_when=concurrent.futures.ALL_COMPLETED)
+
+
 def create_spark_cluster(*args, **kwargs):
     # create storage table and resource group to hold aci instances
     create_cluster_storage_table(
         storage_table_service=kwargs.get('storage_table_service'),
         cluster_id=kwargs.get('cluster_id'),
     )
-    resource_group = get_resource_group(kwargs.get('resource_management_client'), kwargs.get('resource_group_name'))
+    resource_group = get_resource_group(
+        resource_management_client=kwargs.get('resource_management_client'),
+        resource_group_name=kwargs.get('resource_group_name'),
+    )
 
     # define master container
     master_container = create_spark_master_container(cluster_id=kwargs.get('cluster_id'), image=kwargs.get('image'))
@@ -197,20 +216,37 @@ def create_spark_cluster(*args, **kwargs):
                 ],
             ): container for container in worker_containers
         }
-        completed_futures = concurrent.futures.wait(futures, timeout=30, return_when=concurrent.futures.ALL_COMPLETED)
+        done_futures, not_done_futures = concurrent.futures.wait(
+            futures, timeout=30, return_when=concurrent.futures.ALL_COMPLETED)
         #TODO: handle errors if future is not of type azure.mgmt.containerinstance.models.ContainerGroup
-        worker_container_groups = [completed_future.result() for completed_future in completed_futures]
 
+        worker_container_groups = [future.result() for future in done_futures]
+
+    update_storage_cluster_table(
+        storage_table_service=kwargs.get('storage_table_service'),
+        cluster_id=kwargs.get('cluster_id'),
+        container_groups=[master_container_group] + worker_container_groups,
+    )
     return [master_container_group] + worker_container_groups
 
 
-#TODO: change to get_or_create_resource_group
-def get_resource_group(resource_management_client, resource_group_name):
+def get_resource_group(**kwargs):
+    """ Get or create a Resource Group
+    
+    Arguments:
+        resource_management_client
+        resource_group_name
+        location
+
+    """
+    resource_management_client = kwargs.get('resource_management_client')
+    resource_group_name = kwargs.get('resource_group_name')
+    location = kwargs.get('location')
+
     if resource_management_client.resource_groups.check_existence(resource_group_name):
         return resource_management_client.resource_groups.get(resource_group_name)
     else:
-        # TODO: create resource group
-        pass
+        return resource_management_client.resource_groups.create_or_update(resource_group_name=resource_group_name)
 
 
 def create_service_principal_credentials(secrets):
@@ -260,7 +296,6 @@ if __name__ == "__main__":
     import sys
     secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "secrets.yaml")
     secrets = read_secrets(secrets_path)
-    # print(secrets.__dict__)
     aci_client = create_aci_client(secrets)
 
     resource_management_client = create_resource_management_client(secrets)
@@ -268,7 +303,7 @@ if __name__ == "__main__":
     storage_table_service = create_storage_table_service(secrets)
 
     container_groups = create_spark_cluster(
-        worker_count=50,
+        worker_count=5,
         resource_management_client=resource_management_client,
         storage_table_service=storage_table_service,
         image="aztk/staging:spark-aci",
