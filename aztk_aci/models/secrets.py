@@ -3,7 +3,7 @@ from .service_principal import ServicePrincipal
 
 class Secrets:
 
-    def __init__(self):
+    def __init__(self, service_principal=None, subscription_id=None, storage_account_resource_id=None):
         self.service_principal = None
         self.subscription_id = None
         self.storage_account_resource_id = None

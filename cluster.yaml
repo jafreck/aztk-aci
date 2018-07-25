@@ -1,0 +1,11 @@
+# Cluster Configuration
+
+cluster_configuration:
+  id: aztkacitest
+  master_resources: 
+    cpus: 1
+    memory_gb: 2
+  worker_count: 3
+  worker_resources: 
+    cpus: 1
+    memory_gb: 2

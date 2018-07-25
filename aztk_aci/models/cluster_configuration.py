@@ -11,5 +11,5 @@ class ClusterConfiguration():
         """
         self.id = kwargs.get('id')
         self.master_resources = kwargs.get("master_resources")
-        self.worker_count = kwargs.get('id')
-        self.id = kwargs.get('id')
+        self.worker_count = kwargs.get('worker_count')
+        self.worker_resources = kwargs.get('worker_resources')
