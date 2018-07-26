@@ -3,7 +3,11 @@ from aztk_aci import models
 
 # Define secrets
 secrets = models.Secrets(
-    service_principal="",
+    service_principal=models.ServicePrincipal(
+        client_id="",
+        tenant_id="",
+        credential="",
+    ),
     subscription_id="",
     storage_account_resource_id="",
 )
@@ -13,16 +17,16 @@ client = Client(secrets)
 
 # Define a cluster
 cluster_configuration = models.ClusterConfiguration(
-    id="test",
+    id="testcluster",
     master_resources=models.NodeResources(cpu=1, memory_gb=2),
     worker_count=5,
-    worker_resources=models.NodeResources(cpu=1, memory_gb=2))
+    worker_resources=models.NodeResources(cpu=2, memory_gb=4))
 
-# create the cluster
+# create a cluster
 client.cluster.create(cluster_configuration)
 
-# get the cluster
+# get a cluster
 client.cluster.get(id=cluster_configuration.id)
 
-# delete the cluster
+# delete a cluster
 client.cluster.delete(id=cluster_configuration.id)
