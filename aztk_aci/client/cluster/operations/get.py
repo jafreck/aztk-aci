@@ -1,4 +1,5 @@
-from . import deploy
+from .common import create_aci_client, create_resource_management_client, create_storage_table_service
+from aztk_aci import models
 
 
 def print_cluster(**kwargs):
@@ -6,6 +7,7 @@ def print_cluster(**kwargs):
     Arguments:
         entities (:obj:`azure.cosmosdb.table.models.Entity`): Table entites representing nodes to print
     '''
+    # TODO: move this to cli
     entities = kwargs.get('entities')
     cluster_id = kwargs.get('cluster_id')
     unerline_print_format = '-' * 65
@@ -46,17 +48,20 @@ def get_cluster(**kwargs):
     print_cluster(cluster_id=cluster_id, entities=entities)
 
 
-def get(id: str):
-    pass
+def get(secrets: models.Secrets, id: str):
+    # TODO: this should return a cluster object, not print
+    storage_table_service = create_storage_table_service(secrets)
+
+    get_cluster(table_service=storage_table_service, cluster_id=id)
 
 
-if __name__ == "__main__":
-    import os
-    import sys
-    secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "secrets.yaml")
-    secrets = deploy.read_secrets(secrets_path)
-    storage_table_service = deploy.create_storage_table_service(secrets)
+# if __name__ == "__main__":
+#     import os
+#     import sys
+#     secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "secrets.yaml")
+#     secrets = deploy.read_secrets(secrets_path)
+#     storage_table_service = deploy.create_storage_table_service(secrets)
 
-    cluster_id = sys.argv[1]
+#     cluster_id = sys.argv[1]
 
-    get_cluster(table_service=storage_table_service, cluster_id=cluster_id)
+#

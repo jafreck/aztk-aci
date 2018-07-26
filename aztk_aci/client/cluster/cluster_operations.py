@@ -4,14 +4,17 @@ from .operations import deploy, delete, get, diagnostics
 
 class ClusterOperations():
 
+    def __init__(self, secrets: models.Secrets):
+        self._secrets = secrets
+
     def create(self, cluster_configuration: models.ClusterConfiguration):
-        deploy.deploy(cluster_configuration)
+        deploy.deploy(self._secrets, cluster_configuration)
 
     def get(self, id: str):
-        get.get(id)
+        get.get(self._secrets, id)
 
     def delete(self, id: str):
-        delete.delete(id)
+        delete.delete(self._secrets, id)
 
     def diagnositcs(self, id: str):
-        diagnostics.diagnostic(id)
+        diagnostics.diagnostic(self._secrets, id)

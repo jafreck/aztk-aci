@@ -19,6 +19,8 @@ from aztk_aci import constants, error
 from aztk_aci.logger import log
 from aztk_aci.models import Secrets
 
+from .common import create_aci_client, create_resource_management_client, create_storage_table_service
+
 
 def create_container_group_multi(**kwargs):
     """Creates a container group with two containers in the specified
@@ -80,12 +82,10 @@ def create_container(*args, **kwargs):
 def create_spark_master_container(*args, **kwargs):
     container_resource_requests = ResourceRequests(memory_in_gb=2, cpu=1.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
-    # command = ["/bin/bash", "-c", "\"/usr/bin/supervisorctl start master\""]  #TODO
     return create_container(
         container_name=kwargs.get('cluster_id') + '-master',
         image=kwargs.get('image') + "-master",
         resources=container_resource_requirements,
-        # command=command,
         ports=[
             ContainerPort(port=8080, protocol='TCP'),
             ContainerPort(port=7077, protocol='TCP'),
@@ -97,13 +97,11 @@ def create_spark_master_container(*args, **kwargs):
 def create_spark_worker_container(*args, **kwargs):
     container_resource_requests = ResourceRequests(memory_in_gb=2, cpu=1.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
-    # command = ["worker {}".format(kwargs.get('master_ip'))]  #TODO
     container_name = kwargs.get('cluster_id') + '-worker-' + str(kwargs.get("worker_number"))
     return create_container(
         container_name=container_name,
         image=kwargs.get('image') + "-worker",
         resources=container_resource_requirements,
-        # command=command,
         environment_variables=[EnvironmentVariable(name="MASTER_IP", value=kwargs.get('master_ip'))],
         ports=[
             ContainerPort(port=7077, protocol='TCP'),
@@ -248,68 +246,37 @@ def get_resource_group(**kwargs):
         return resource_management_client.resource_groups.create_or_update(resource_group_name=resource_group_name)
 
 
-def create_service_principal_credentials(secrets):
-    return ServicePrincipalCredentials(
-        client_id=secrets.service_principal.client_id,
-        secret=secrets.service_principal.credential,
-        tenant=secrets.service_principal.tenant_id)
-
-
-def create_aci_client(secrets):
-    credentials = create_service_principal_credentials(secrets)
-    return ContainerInstanceManagementClient(
-        credentials,
-        secrets.subscription_id,
-        base_url=None,
-    )
-
-
-def create_resource_management_client(secrets):
-    credentials = create_service_principal_credentials(secrets)
-    return ResourceManagementClient(credentials, secrets.subscription_id)
-
-
-def create_storage_table_service(secrets):
-    credentials = create_service_principal_credentials(secrets)
-    match = constants.RESOURCE_ID_PATTERN.match(secrets.storage_account_resource_id)
-    accountname = match.group('account')
-    subscription = match.group('subscription')
-    resourcegroup = match.group('resourcegroup')
-    mgmt_client = StorageManagementClient(credentials, subscription)
-    key = mgmt_client.storage_accounts.list_keys(resource_group_name=resourcegroup, account_name=accountname).keys[0].value
-    # storage_client = CloudStorageAccount(accountname, key)
-    # blob_client = storage_client.create_block_blob_service()
-    table_service = TableService(account_name=accountname, account_key=key)
-
-    return table_service
-
-
-def read_secrets(secrets_file):
-    with open(secrets_file) as stream:
-        secrets_dict = yaml.load(stream)
-    return Secrets().from_dict(secrets_dict)
-
-
-def deploy(cluster_configuration):
-    pass
-
-
-if __name__ == "__main__":
-    import os
-    import sys
-    secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "secrets.yaml")
-    secrets = read_secrets(secrets_path)
+def deploy(secrets, cluster_configuration):
     aci_client = create_aci_client(secrets)
-
     resource_management_client = create_resource_management_client(secrets)
-
     storage_table_service = create_storage_table_service(secrets)
 
-    container_groups = create_spark_cluster(
+    return create_spark_cluster(
         worker_count=5,
         resource_management_client=resource_management_client,
         storage_table_service=storage_table_service,
         image="aztk/staging:spark-aci",
         aci_client=aci_client,
         resource_group_name="spark-aci",
-        cluster_id="testsparkcluster" + sys.argv[1])
+        cluster_id=cluster_configuration.id)
+
+
+# if __name__ == "__main__":
+#     import os
+#     import sys
+#     secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "secrets.yaml")
+#     secrets = common.read_secrets(secrets_path)
+#     aci_client = common.create_aci_client(secrets)
+
+#     resource_management_client = common.create_resource_management_client(secrets)
+
+#     storage_table_service = common.create_storage_table_service(secrets)
+
+#     container_groups = create_spark_cluster(
+#         worker_count=5,
+#         resource_management_client=resource_management_client,
+#         storage_table_service=storage_table_service,
+#         image="aztk/staging:spark-aci",
+#         aci_client=aci_client,
+#         resource_group_name="spark-aci",
+#         cluster_id="testsparkcluster" + sys.argv[1])
