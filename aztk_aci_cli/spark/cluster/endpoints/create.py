@@ -31,4 +31,7 @@ def execute(args):
     # create a cluster
     cluster = client.cluster.create(cluster_configuration)
 
-    # TODO: print master node fqdn
+    print_format = "Spark Master UI: http://{}:8080"
+    for container_group in cluster:
+        if container_group.name == args.id:
+            print(print_format.format(container_group.ip_address.fqdn))

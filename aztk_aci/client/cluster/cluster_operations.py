@@ -8,13 +8,13 @@ class ClusterOperations():
         self._secrets = secrets
 
     def create(self, cluster_configuration: models.ClusterConfiguration):
-        deploy.deploy(self._secrets, cluster_configuration)
+        return deploy.deploy(self._secrets, cluster_configuration)
 
     def get(self, id: str):
-        get.get(self._secrets, id)
+        return get.get(self._secrets, id)
 
     def delete(self, id: str):
-        delete.delete(self._secrets, id)
+        return delete.delete(self._secrets, id)
 
     def diagnositcs(self, id: str):
-        diagnostics.diagnostic(self._secrets, id)
+        return diagnostics.diagnostic(self._secrets, id)
