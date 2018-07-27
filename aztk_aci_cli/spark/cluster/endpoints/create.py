@@ -35,3 +35,16 @@ def execute(args):
     for container_group in cluster:
         if container_group.name == args.id:
             print(print_format.format(container_group.ip_address.fqdn))
+            test_availability("http://{}:8080".format(container_group.ip_address.fqdn))
+
+
+def test_availability(url: str):
+    import requests
+
+    while True:
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                break
+        except requests.exceptions.ConnectionError:
+            pass

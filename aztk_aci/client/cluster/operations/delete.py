@@ -4,6 +4,11 @@ from .common import create_aci_client, create_resource_management_client, create
 from aztk_aci.logger import log
 
 
+# TODO
+def delete_storage_table(storage_table_service, id):
+    pass
+
+
 def delete_container_group(aci_client, storage_table_service, resource_group, container_group_name):
     log.info("Deleting container group {} in resource group {}".format(container_group_name, resource_group))
     aci_client.container_groups.delete(resource_group, container_group_name)

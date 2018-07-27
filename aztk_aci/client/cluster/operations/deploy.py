@@ -254,7 +254,7 @@ def deploy(secrets, cluster_configuration):
     storage_table_service = create_storage_table_service(secrets)
 
     return create_spark_cluster(
-        worker_count=5,
+        worker_count=3,
         resource_management_client=resource_management_client,
         storage_table_service=storage_table_service,
         image="aztk/staging:spark-aci",
