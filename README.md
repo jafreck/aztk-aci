@@ -7,7 +7,7 @@ Deploy scalable Spark clusters in seconds on top of Azure Container Instances (A
 
 AZTK on ACI provisions Spark clusters in seconds.
 
-Feautres:
+Features:
 - 20 second cluster deployment time
 - heterogenous master and worker sizes
 
@@ -20,6 +20,7 @@ Roadmap:
 - Cluster resize support
 - support for vnets, with single IP to submit application
 - Job submission mode
+- File upload
 
 
 ## Installation
@@ -44,6 +45,9 @@ pip install -e aztk-aci/
 ```
 
 ## Usage
+
+### Getting Started
+TBD
 
 ### CLI
 Usage:
