@@ -95,6 +95,7 @@ def create_spark_master_container(*args, **kwargs):
 
 
 def create_spark_worker_container(*args, **kwargs):
+    # TODO: change resources
     container_resource_requests = ResourceRequests(memory_in_gb=2, cpu=1.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
     container_name = kwargs.get('cluster_id') + '-worker-' + str(kwargs.get("worker_number"))
@@ -111,6 +112,7 @@ def create_spark_worker_container(*args, **kwargs):
 
 
 def create_extension_container(*args, **kwargs):
+    # TODO: change resources
     container_resource_requests = ResourceRequests(memory_in_gb=2, cpu=1.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
     command = [],  #TODO

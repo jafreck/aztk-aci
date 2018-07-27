@@ -106,3 +106,4 @@ venv.bak/
 
 secrets.yaml
 spec.txt
+.aztk_aci/*

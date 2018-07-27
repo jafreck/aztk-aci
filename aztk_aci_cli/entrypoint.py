@@ -1,9 +1,15 @@
 import argparse
+import warnings
 
-import constants
-from spark import spark
-from aztk_aci import error
-from azure.mgmt.containerinstance import
+from aztk_aci import error, version
+from aztk_aci_cli import constants
+from .logger import log, setup_logging
+from .spark import spark
+
+
+# Makes sure the warnings are displayed nicely in the CLI without a stacktrace
+def _show_warn(message, *_args):
+    log.warning(str(message))
 
 
 def main():
@@ -18,39 +24,35 @@ def main():
     toolkit_parser = subparsers.add_parser("toolkit", help="List current toolkit information and browse available ones")
 
     spark.setup_parser(spark_parser)
-    plugins.setup_parser(plugins_parser)
-    toolkit.setup_parser(toolkit_parser)
     args = parser.parse_args()
 
     parse_common_args(args)
 
     try:
         run_software(args)
-    except batch_error.BatchErrorException as e:
-        utils.print_batch_exception(e)
-    except aztk.error.AztkError as e:
+    # except batch_error.BatchErrorException as e:
+    #     utils.print_batch_exception(e)
+    except error.AztkError as e:
         log.error(str(e))
 
 
 def setup_common_args(parser: argparse.ArgumentParser):
-    parser.add_argument('--version', action='version', version=aztk.version.__version__)
+    parser.add_argument('--version', action='version', version=version.__version__)
     parser.add_argument("--verbose", action='store_true', help="Enable verbose logging.")
 
 
-def parse_common_args(args: NamedTuple):
+def parse_common_args(args):
     if args.verbose:
-        logger.setup_logging(True)
+        setup_logging(True)
         log.debug("Verbose logging enabled")
     else:
         warnings.showwarning = _show_warn
-        logger.setup_logging(False)
+        setup_logging(False)
 
 
-def run_software(args: NamedTuple):
+def run_software(args):
     softwares = {}
-    softwares[aztk.models.Software.spark] = spark.execute
-    softwares["plugins"] = plugins.execute
-    softwares["toolkit"] = toolkit.execute
+    softwares["spark"] = spark.execute
 
     func = softwares[args.software]
     func(args)

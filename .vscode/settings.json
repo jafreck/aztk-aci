@@ -1,4 +1,8 @@
 {
+    "files.exclude": {
+        "**/__pycache__": true,
+        "*.egg-info": true,
+    },
     "python.pythonPath": "${workspaceFolder}/env/bin/python",
     "python.formatting.provider": "yapf",
     "editor.formatOnSave": true
