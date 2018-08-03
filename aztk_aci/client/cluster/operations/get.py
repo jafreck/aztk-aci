@@ -15,6 +15,16 @@ def print_cluster(**kwargs):
     title_print_format = '| {:^40}| {:^20}|'
     entry_print_format = '| {:<40}| {:<20}|'
 
+    # cpus = 0
+    # memory_in_gb = 0
+    # for entity in entities:
+    #     cpus += int(entity.cpus)
+    #     memory_in_gb += int(entity.memory_in_gb)
+
+    # total_cost = (0.000005 * memory_in_gb) + (0.000014 * cpus)
+
+    # print("COST: Memory: $0.000005 * {} + $0.000014 * {} = {}".format(memory_in_gb, cpus, total_cost))
+
     print(unerline_print_format)
     print(cluster_title_format.format("Cluster: " + cluster_id))
     print(unerline_print_format)
