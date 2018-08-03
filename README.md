@@ -8,7 +8,7 @@ Deploy scalable Spark clusters in seconds on top of Azure Container Instances (A
 AZTK on ACI provisions Spark clusters in seconds.
 
 Features:
-- 20 second cluster deployment time
+- 1 minute cluster deployment time
 - heterogenous master and worker sizes
 
 
