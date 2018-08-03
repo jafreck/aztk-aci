@@ -80,7 +80,7 @@ def create_container(*args, **kwargs):
 
 
 def create_spark_master_container(*args, **kwargs):
-    container_resource_requests = ResourceRequests(memory_in_gb=2, cpu=1.0)
+    container_resource_requests = ResourceRequests(memory_in_gb=4, cpu=2.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
     return create_container(
         container_name=kwargs.get('cluster_id') + '-master',
@@ -96,7 +96,7 @@ def create_spark_master_container(*args, **kwargs):
 
 def create_spark_worker_container(*args, **kwargs):
     # TODO: change resources
-    container_resource_requests = ResourceRequests(memory_in_gb=2, cpu=1.0)
+    container_resource_requests = ResourceRequests(memory_in_gb=14, cpu=4.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
     container_name = kwargs.get('cluster_id') + '-worker-' + str(kwargs.get("worker_number"))
     return create_container(
@@ -113,7 +113,7 @@ def create_spark_worker_container(*args, **kwargs):
 
 def create_extension_container(*args, **kwargs):
     # TODO: change resources
-    container_resource_requests = ResourceRequests(memory_in_gb=2, cpu=1.0)
+    container_resource_requests = ResourceRequests(memory_in_gb=14, cpu=4.0)
     container_resource_requirements = ResourceRequirements(requests=container_resource_requests)
     command = [],  #TODO
     return create_container(
@@ -153,6 +153,8 @@ def update_storage_cluster_table(**kwargs):
         entity.RowKey = str(uuid.uuid4())
         entity.id = container_group.name
         entity.ip = container_group.ip_address.ip
+        entity.cpu = container_group.containers[0].resources.requests.cpu
+        entity.memory_in_gb = container_group.containers[0].resources.requests.memory_in_gb
         entities.append(entity)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -254,7 +256,7 @@ def deploy(secrets, cluster_configuration):
     storage_table_service = create_storage_table_service(secrets)
 
     return create_spark_cluster(
-        worker_count=3,
+        worker_count=cluster_configuration.worker_count,
         resource_management_client=resource_management_client,
         storage_table_service=storage_table_service,
         image="aztk/staging:spark-aci",
